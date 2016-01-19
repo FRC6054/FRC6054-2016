@@ -18,10 +18,10 @@ public class Robot extends IterativeRobot {
 	Joystick Left = new Joystick(1);
 	Joystick Right = new Joystick(2);
 	
-	Victor LeftMotor1 = new Victor(1);
-	Victor LeftMotor2 = new Victor(2);
-	Victor RightMotor1 = new Victor(3);
-	Victor RightMotor2 = new Victor(4);
+	Victor LeftMotor1 = new Victor(0);
+	Victor LeftMotor2 = new Victor(1);
+	Victor RightMotor1 = new Victor(2);
+	Victor RightMotor2 = new Victor(3);
 
 
     public void robotInit() {
