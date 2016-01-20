@@ -15,8 +15,8 @@ import edu.wpi.first.wpilibj.Victor;
  */
 public class Robot extends IterativeRobot {
 
-	Joystick Left = new Joystick(1);
-	Joystick Right = new Joystick(2);
+	Joystick Left = new Joystick(0);
+	Joystick Right = new Joystick(1);
 	
 	Victor LeftMotor1 = new Victor(0);
 	Victor LeftMotor2 = new Victor(1);
