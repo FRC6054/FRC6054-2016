@@ -6,29 +6,15 @@ import edu.wpi.first.wpilibj.CameraServer;											//importing classes
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.Victor;
-import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj.vision.USBCamera;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import java.net.InetAddress;
-import java.util.concurrent.TimeUnit;
 import com.ni.vision.NIVision;
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
-import edu.wpi.first.wpilibj.SensorBase;
-import edu.wpi.first.wpilibj.GyroBase;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
-import edu.wpi.first.wpilibj.tables.ITable;
-import edu.wpi.first.wpilibj.tables.TableKeyNotDefinedException;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.Servo;
-import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.Ultrasonic.Unit;
-
-
+import edu.wpi.first.wpilibj.TalonSRX;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -38,11 +24,10 @@ import edu.wpi.first.wpilibj.Ultrasonic.Unit;
  * directory.
  */
 
-
-
 public class Robot extends IterativeRobot {                                                      //naming all of the inputs to the computer and the roboRio
 
 	DriverStation station = DriverStation.getInstance();
+	
 	
 	Joystick Left = new Joystick(0);
 	Joystick Right = new Joystick(1);
@@ -52,21 +37,28 @@ public class Robot extends IterativeRobot {                                     
 	Victor RightMotor1 = new Victor(2);
 	Victor RightMotor2 = new Victor(3);
 	
+	TalonSRX LEDRing = new TalonSRX(7);
+	
 	VictorSP ballMotor = new VictorSP(4);
 	
-	VictorSP LEDRing = new VictorSP(7);
+	VictorSP armMotor = new VictorSP(6);
 
-	Servo yaw = new Servo(8);
-	Servo pitch = new Servo(9);
+	Servo cameraservo = new Servo(5);
+	
+	Ultrasonic FS = new Ultrasonic(0, 1);
 	
 	CameraServer server;	
-	USBCamera camera = new USBCamera ("cam1");
+	USBCamera camera = new USBCamera ("cam0");
 	NIVision.Image frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+	
+//	CameraServer server1;	
+//	USBCamera camera1 = new USBCamera ("cam0");
+//	NIVision.Image frame1 = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 	
 	Timer Timer = new Timer(); 
 
 	public void robotInit() {
-
+		
 		camera.openCamera();											//initializing the USBCamera
 		camera.startCapture();
 		camera.getImage(frame);
@@ -88,113 +80,105 @@ public class Robot extends IterativeRobot {                                     
 
 	public void autonomousInit() {
     	
+//		FS.setAutomaticMode(true);
+//    	FS.updateTable();
+//    	FS.startLiveWindowMode();
+		
     	camera.setExposureManual(0);										//setting camera settings for green finder
     	camera.setWhiteBalanceManual(7366);
     	camera.updateSettings();
-    	LEDRing.set(1.0); 
      	
      	Timer.start();														//starts timer for autonomous wait command
 
     }
 
 	public void autonomousPeriodic() {
-    
-	  													
+		
     	NetworkTable.setServerMode();										//sets networktables as server to send data
     	NetworkTable datatable = NetworkTable.getTable("datatable");		//naming the COG capture variables from roborealm
 		double x = datatable.getNumber("COG_X", 0.0);
     	double y = datatable.getNumber("COG_Y", 0.0);
+//    	double sonarTimer = 0.0;
+    	double whileTimer = 0.0;
+    	double timer1 = 0.0;
+    	cameraservo.set(.9);
 
-
-    	NetworkTable corners = NetworkTable.getTable("corners");			//naming the corner capture variables from roborealm
-    	double NEX = corners.getNumber("NORTHEAST_X", 0.0);
-    	double NEY = corners.getNumber("NORTHEAST_Y", 0.0);
-    	double NWX = corners.getNumber("NORTHWEST_X", 0.0);
-    	double NWY = corners.getNumber("NORTHWEST_Y", 0.0);
-    	double SEX = corners.getNumber("SOUTHEAST_X", 0.0);
-    	double SEY = corners.getNumber("SOUTHEAST_Y", 0.0);
-    	double SWX = corners.getNumber("SOUTHWEST_X", 0.0);
-    	double SWY = corners.getNumber("SOUTHWEST_Y", 0.0);
+    	LeftMotor1.set(0.8);
+    	LeftMotor2.set(0.8);
+    	RightMotor1.set(-0.8);			// get over ramp
+    	RightMotor2.set(-0.8);
+    	Timer.delay(3);
     	
-    		LeftMotor1.set(0.3);
-    		LeftMotor2.set(0.3);
-    		RightMotor1.set(-0.3);			// get over ramp
-    		RightMotor2.set(-0.3);
-    		Timer.delay(5);	
+//    	LeftMotor1.set(0.5);
+//    	LeftMotor2.set(0.5);
+//    	RightMotor1.set(-0.5);			// get over ramp
+//    	RightMotor2.set(-0.5);
+//    	Timer.delay(2);
     		
-    		LeftMotor1.set(0);
-    		LeftMotor2.set(0);
-    		RightMotor1.set(0);
-    		RightMotor2.set(0);		//temp wait
-    		Timer.delay(3);
     		
-    		yaw.set(0.2);
-    		pitch.set(0.6);			// this doesnt work  :(
+    	LeftMotor1.set(0);
+    	LeftMotor2.set(0);
+    	RightMotor1.set(0);
+    	RightMotor2.set(0);		                           //temp wait
     		
-    		LEDRing.set(1.0);    //turns on LED to see the green U - shape
-        	
-    		
-//    	while (SEY < SWY && isAutonomous()) {
-//    		SEY = corners.getNumber("SOUTHEAST_Y", 0.0);
-//    		SWY = corners.getNumber("SOUTHWEST_Y", 0.0);		// while not lineed up keep going strait
-//        	LeftMotor1.set(0.3);
-//        	LeftMotor2.set(0.3);
-//        	RightMotor1.set(-0.3);
-//        	RightMotor2.set(-0.3);
-//        	}	
-
-//    	LeftMotor1.set(0);
-//		LeftMotor2.set(0);
-//		RightMotor1.set(0);		//temp wait
-//		RightMotor2.set(0);
-//		Timer.delay(3);
+    	LEDRing.set(1);
+    	
+        Timer.delay(.5);	
+    	cameraservo.set(.35);
+    	Timer.delay(2);
 		
-    	yaw.set(0.5);
+    	LeftMotor1.set(-0.4);
+    	LeftMotor2.set(-0.4);
+    	RightMotor1.set(-0.4);                                          //going left
+    	RightMotor2.set(-0.4);
     	Timer.delay(.5);
     	
-    	
-    	
+//		LeftMotor1.set(0.4);
+//    	LeftMotor2.set(0.4);
+//    	RightMotor1.set(0);                                          //going right
+//    	RightMotor2.set(0);
+//    	Timer.delay(1);
     	
     	while (((x>380 || x<340) && x>0) && isAutonomous()) {
     		x = datatable.getNumber("COG_X", 0.0);                             //getting lined up
     		if (x>380) {
-    			LeftMotor1.set(0.3);
-            	LeftMotor2.set(0.3);
+    			LeftMotor1.set(0.4);
+            	LeftMotor2.set(0.4);
             	RightMotor1.set(0);                                          //going right
             	RightMotor2.set(0);
     		}
     		if (x<340) {
     			LeftMotor1.set(0);
             	LeftMotor2.set(0);
-            	RightMotor1.set(-0.3);                                        //going left
-            	RightMotor2.set(-0.3);
+            	RightMotor1.set(-0.4);                                        //going left
+            	RightMotor2.set(-0.4);
     		}
     	}
-    	
-    	
-    	while (y<450 && isAutonomous()) {
+    
+    	while (y<450 && isAutonomous() && whileTimer < 5) {
     		x = datatable.getNumber("COG_X", 0.0);                             // towards the goal
     		y = datatable.getNumber("COG_Y", 0.0);
     		if (x<380 && x>340) {
-    			LeftMotor1.set(0.3);
-            	LeftMotor2.set(0.3);
-            	RightMotor1.set(-0.3);                                            // go straight
-            	RightMotor2.set(-0.3);
-    		}
-    		if (x>380) {
-    			LeftMotor1.set(0.35);
-            	LeftMotor2.set(0.35);
-            	RightMotor1.set(-0.25);                                         //if it becomes unaligned, turn right
-            	RightMotor2.set(-0.25);
-    		}
-    		else if (x<340 && x>0) {
-    			LeftMotor1.set(0.25);
-            	LeftMotor2.set(0.25);                                        //if it becomes unaligned, turn left
-            	RightMotor1.set(-0.35);
+    			LeftMotor1.set(0.4);
+            	LeftMotor2.set(0.4);
+            	RightMotor1.set(-0.35);                                            // go straight
             	RightMotor2.set(-0.35);
     		}
-    		else {
+    		if (x>380) {
+    			LeftMotor1.set(0.4);
+            	LeftMotor2.set(0.4);
+            	RightMotor1.set(-0.2);                                         //if it becomes unaligned, turn right
+            	RightMotor2.set(-0.2);
+    		}
+    		else if (x<340 && x>0) {
+    			LeftMotor1.set(0.2);
+            	LeftMotor2.set(0.2);                                        //if it becomes unaligned, turn left
+            	RightMotor1.set(-0.4);
+            	RightMotor2.set(-0.4);
+    		}
+    		else if (y == 0) {
     			Timer.delay(0.01);                                          //wait
+    			whileTimer += 0.01;
     		}
     	}
     	
@@ -203,20 +187,51 @@ public class Robot extends IterativeRobot {                                     
     	RightMotor1.set(0);
     	RightMotor2.set(0);
  
-    	if (y > 450) {
+    	while (y > 450) {
+    		x = datatable.getNumber("COG_X", 0.0);                             // towards the goal
     		y = datatable.getNumber("COG_Y", 0.0);
-    		pitch.set(.75);
-    		LEDRing.set(0);
-    		Timer.delay(0.25);                                          //blink LED ring
-    		LEDRing.set(1);
-    		Timer.delay(0.25);
-    		LEDRing.set(0);
-    		Timer.delay(0.25);
-    		LEDRing.set(1);
-    		Timer.delay(0.25);
+    		if (x<380 && x>340) {
+    			LeftMotor1.set(0);
+            	LeftMotor2.set(0);
+            	RightMotor1.set(0);                                            // go straight
+            	RightMotor2.set(0);
+    		}
+    		if (x>380) {
+    			LeftMotor1.set(0.4);
+            	LeftMotor2.set(0.4);
+            	RightMotor1.set(0);                                         //if it becomes unaligned, turn right
+            	RightMotor2.set(0);
+    		}
+    		else if (x<340 && x>0) {
+    			LeftMotor1.set(0);
+            	LeftMotor2.set(0);                                        //if it becomes unaligned, turn left
+            	RightMotor1.set(-0.4);
+            	RightMotor2.set(-0.4);
+    		}
+    		else {
+    			timer1 += 0.01;
+    			Timer.delay(.01);
     		
+    		}
     	}
-        }
+    	
+    	LeftMotor1.set(0);
+    	LeftMotor2.set(0);                                       //stop motors
+    	RightMotor1.set(0);
+    	RightMotor2.set(0);
+    	
+    	ballMotor.set(1);
+    	Timer.delay(5);
+    
+    	ballMotor.set(0);
+    	
+    	while (isAutonomous()) {
+    		Timer.delay(0.1);
+    	}
+    	
+    	LEDRing.set(0);
+    	
+    }
     		   	
 
 
@@ -231,29 +246,117 @@ public class Robot extends IterativeRobot {                                     
 	}
 
     
-	public void teleopPeriodic() {
-    	double Rightaxis = Left.getRawAxis(4);									//sets variables on the joysticks for controlling the robot
-    	double Leftaxis = Left.getRawAxis(0);                 
-    	double Righttrigger = (Left.getRawAxis(3) * -1);    
+	public void teleopPeriodic() {									//sets variables on the joysticks for controlling the robot
+    	double Leftaxis = Left.getRawAxis(0);                   
     	double Lefttrigger = Left.getRawAxis(2);
     	double Rightspeed = Left.getRawAxis(3);
     	double Leftspeed = Left.getRawAxis(3);
     	double RightspeedReverse = Left.getRawAxis(2);        
     	double LeftspeedReverse = Left.getRawAxis(2);
-    	double SwillP;
     	boolean rbON = true;
-    	boolean lbON = true;
-    	boolean ybON = true;
     	boolean bbON = true;
     	boolean abON = true;
     	boolean xbON = true;
-    	
-    	if (abON = Left.getRawButton(1)) {													//turns LED on
-    		LEDRing.set(1);
+    	boolean sucky = true;
+    	boolean pew = true;
+    	boolean estop = true;
+    	double armspeed = (Right.getRawAxis(1) * -1);
+    	boolean port = true;
+    	boolean cameraset = true;
+    	boolean cameraset2 = true;
+    	boolean cameraon = true;
+    			
+//    	if (cameraon = Right.getRawButton(7)) {
+//    	
+//    		camera1.openCamera();											//initializing the USBCamera
+//    		camera1.startCapture();
+//    		camera1.getImage(frame1);
+//    		CameraServer.getInstance().setImage(frame1);
+//    		server1 = CameraServer.getInstance();
+//    		server1.setQuality(50);
+//    		server1.startAutomaticCapture(camera1);
+//    		camera1.setBrightness(50);										//sets new camera settings for comfortable driving
+//    		camera1.setWhiteBalanceAuto();
+//    		camera1.setExposureAuto();
+//    		camera1.updateSettings();
+//    	
+//    	}
+		
+    	if (rbON = Left.getRawButton(5)) {
+    		cameraservo.set(.35);
     	}
     	
-    	if (xbON = Left.getRawButton(3)) {														//turns LED off
-    		LEDRing.set(0);
+    	if (cameraset = Right.getRawButton(11)) {
+    		camera.setExposureManual(0);										//setting camera settings for green finder
+        	camera.setWhiteBalanceManual(7366);
+        	camera.updateSettings();
+    	}
+    	
+    	if (cameraset2 = Right.getRawButton(12)) {
+    		camera.setBrightness(50);										//sets new camera settings for comfortable driving
+    		camera.setWhiteBalanceAuto();
+    		camera.setExposureAuto();
+    		camera.updateSettings();
+    	}
+    	
+    	if (port = Left.getRawButton(8)) {
+    		armMotor.set(-1);
+    		
+    		LeftMotor1.set(-.5);												//sets motors for forward driving
+        	LeftMotor2.set(-.5);                  
+        	
+    	    RightMotor1.set(.5);
+        	RightMotor2.set(.5);  
+        	Timer.delay(.25);
+    		
+    		LeftMotor1.set(.5);												//sets motors for forward driving
+        	LeftMotor2.set(.5);                  
+        	
+    	    RightMotor1.set(-.5);
+        	RightMotor2.set(-.5);  
+        	Timer.delay(.25);
+        	
+        	LeftMotor1.set(-.5);												//sets motors for forward driving
+        	LeftMotor2.set(-.5);                  
+        	
+    	    RightMotor1.set(.5);
+        	RightMotor2.set(.5);  
+        	Timer.delay(.25);
+        	
+        	LeftMotor1.set(.5);												//sets motors for forward driving
+        	LeftMotor2.set(.5);                  
+        	
+    	    RightMotor1.set(-.5);
+        	RightMotor2.set(-.5);  
+        	Timer.delay(.25);
+        	
+        	LeftMotor1.set(-.5);												//sets motors for forward driving
+        	LeftMotor2.set(-.5);                  
+        	
+    	    RightMotor1.set(.5);
+        	RightMotor2.set(.5);  
+        	Timer.delay(1);
+
+    	}
+    	
+    	if (armspeed < 0.2 && armspeed > -0.2) {
+    		armMotor.set(0);
+    	}
+    	
+    	if (armspeed > 0.20 || armspeed < -0.20) {
+    		armMotor.set(armspeed);
+    	}
+    	
+    	if (pew = Right.getRawButton(1)) {
+    		ballMotor.set(1);
+    	}
+	
+    	if (sucky = Right.getRawButton(2)) {
+    		ballMotor.set(-1);
+    	}
+    	
+    	if (estop = Right.getRawButton(4)) {
+    		ballMotor.set(0);
     	}
     	
     	while (Left.getRawAxis(4) > 0.2 || Left.getRawAxis(4) < -0.2)  {					//zeroturn command
@@ -262,6 +365,16 @@ public class Robot extends IterativeRobot {                                     
         	                                                    
     		RightMotor1.set((Left.getRawAxis(4)));
         	RightMotor2.set((Left.getRawAxis(4)));
+        	
+        	armspeed = (Right.getRawAxis(1) * -1);
+        	
+        	if (armspeed < 0.2 && armspeed > -0.2) {
+        		armMotor.set(0);
+        	}
+        	
+        	if (armspeed > 0.20 || armspeed < -0.20) {
+        		armMotor.set(armspeed);
+        	}
     	}
     	
     	if (Leftaxis > 0.1) {																//forward turning
@@ -273,13 +386,69 @@ public class Robot extends IterativeRobot {                                     
     		Leftspeed *= Leftaxis + 1;          
     	}
     	
-    	
-    	
     	while (Lefttrigger > 0.1) {												//reverse command
     		Lefttrigger = Left.getRawAxis(2);
     		Leftaxis = Left.getRawAxis(0);
     		RightspeedReverse = Left.getRawAxis(2);        
         	LeftspeedReverse = Left.getRawAxis(2);
+        	armspeed = (Right.getRawAxis(1) * -1);
+        	
+        	if (rbON = Left.getRawButton(6)) {										//setting camera servo for left and right
+        		cameraservo.set(1);
+        	}
+        
+        	if (bbON = Left.getRawButton(2)) {
+        		cameraservo.set(0.55);
+        	}
+        	
+        	if (port = Left.getRawButton(8)) {
+        		armMotor.set(-1);
+        		
+        		LeftMotor1.set(-.5);												//sets motors for forward driving
+            	LeftMotor2.set(-.5);                  
+            	
+        	    RightMotor1.set(.5);
+            	RightMotor2.set(.5);  
+            	Timer.delay(.25);
+        		
+        		LeftMotor1.set(.5);												//sets motors for forward driving
+            	LeftMotor2.set(.5);                  
+            	
+        	    RightMotor1.set(-.5);
+            	RightMotor2.set(-.5);  
+            	Timer.delay(.1);
+            	
+            	LeftMotor1.set(-.5);												//sets motors for forward driving
+            	LeftMotor2.set(-.5);                  
+            	
+        	    RightMotor1.set(.5);
+            	RightMotor2.set(.5);  
+            	Timer.delay(.25);
+            	
+            	LeftMotor1.set(.5);												//sets motors for forward driving
+            	LeftMotor2.set(.5);                  
+            	
+        	    RightMotor1.set(-.5);
+            	RightMotor2.set(-.5);  
+            	Timer.delay(.1);
+            	
+            	LeftMotor1.set(-.6);												//sets motors for forward driving
+            	LeftMotor2.set(-.6);                  
+            	
+        	    RightMotor1.set(.6);
+            	RightMotor2.set(.6);  
+            	Timer.delay(2);
+
+        	}
+        	
+        	
+        	if (armspeed < 0.2 && armspeed > -0.2) {
+        		armMotor.set(0);
+        	}
+        	
+        	if (armspeed > 0.20 || armspeed < -0.20) {
+        		armMotor.set(armspeed);
+        	}
         	
     		if (Leftaxis > 0.1) {   											//reverse turning
     			Leftaxis *= -1; 
@@ -295,34 +464,52 @@ public class Robot extends IterativeRobot {                                     
     		RightMotor1.set((RightspeedReverse));
     		RightMotor2.set((RightspeedReverse));
     	}
-
-    	ballMotor.set(Right.getRawAxis(1) * -1);
-    	
+	
     	LeftMotor1.set(Leftspeed);												//sets motors for forward driving
     	LeftMotor2.set(Leftspeed);                  
     	
 	    RightMotor1.set(Rightspeed * -1);
-    	RightMotor2.set(Rightspeed * -1);          
-    	
+    	RightMotor2.set(Rightspeed * -1);    
+ 
     	if (rbON = Left.getRawButton(6)) {										//setting camera servo for left and right
-    		yaw.set(0.3);
+    		cameraservo.set(1);
     	}
     	
-    	if (lbON = Left.getRawButton(5)) {
-    		yaw.set(0.5);
-    	}
-    	
-    	if (ybON = Left.getRawButton(4)) {										//setting camera servo for up and down
-    		pitch.set(0.3);
-    	}
     	if (bbON = Left.getRawButton(2)) {
-    		pitch.set(0.6);
+    		cameraservo.set(0.55);
+    	}
+    	
+    	if (Left.getRawAxis(3) < 0.1 && Left.getRawAxis(2) < 0.1) {  			//turning while coasting
+    		if (Left.getRawAxis(0) > 0.1){
+    			LeftMotor1.set(Left.getRawAxis(0)/2);	
+    			LeftMotor2.set(Left.getRawAxis(0)/2);								
+    		}
+        	if (Left.getRawAxis(0) < -0.1) {
+        		RightMotor1.set(Left.getRawAxis(0)/2);	
+    			RightMotor2.set(Left.getRawAxis(0)/2);
+        	}
+    	}
+    	
+    	if (abON = Left.getRawButton(1)) {
+    		LEDRing.set(1);
+    	}
+    	
+    	if (xbON = Left.getRawButton(3)) {
+    		LEDRing.set(0);
     	}
     	
     }
    
 
 	public void testPeriodic() {
-	
-    }
+		
+		camera.setExposureManual(0);										//setting camera settings for green finder
+    	camera.setWhiteBalanceManual(7366);
+    	camera.updateSettings();
+		
+		LEDRing.set(1);
+		
+		ballMotor.set(Right.getRawAxis(1));
+	}	
 }	
+	
